@@ -9,13 +9,13 @@
 ## Установка
 
 ```sh
-go get github.com/max-messenger/maxbot-template-go
+go get github.com/max-messenger/max-message-template-go
 ```
 
 ## Быстрый старт
 
 ```go
-import "github.com/max-messenger/maxbot-template-go"
+import "github.com/max-messenger/max-message-template-go"
 
 // Рендер сообщения с динамическими значениями
 msg := template.ReplaceValues("Привет, {name}!", template.Values{"name": "Мир"})
