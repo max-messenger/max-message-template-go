@@ -172,3 +172,88 @@ func ParseFormV2(template string, values Getter) (string, []model.Attachment) {
 
 	return body, attachments
 }
+
+func ParseTemplate(template string, values Getter) (string, []model.Attachment) {
+	if strings.Index(template, "===") == -1 {
+		s, kbd := ParseForm(template, values)
+		if kbd != nil {
+			return s, []model.Attachment{kbd.Build()}
+		}
+
+		return s, []model.Attachment{}
+	}
+
+	parts := strings.Split(template, "===")
+	lines := strings.SplitSeq(parts[0], "\n")
+	template = parts[1]
+	attachments := make([]model.Attachment, 0, 10)
+	for line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if a := NewAttachment(line, values); a != nil {
+			attachments = append(attachments, *a)
+		}
+	}
+	s, attach := ParseFormV2(template, values)
+	if len(attach) > 0 {
+		attachments = append(attachments, attach...)
+	}
+
+	return s, attachments
+}
+
+//nolint:cyclop
+func NewAttachment(line string, values Getter) *model.Attachment {
+	s := model.Attachment{}
+	switch {
+	case strings.HasPrefix(line, "http://") || strings.HasPrefix(line, "https://"):
+		s.Payload.URL = line
+
+		return &s
+
+	case strings.HasPrefix(line, "image:"):
+		filename := line[len("image:"):]
+		if v, ok := values.Get(filename); ok {
+			s.Type = model.AttachImage
+			s.FileName = filename
+			s.Payload.Token = v.(string)
+
+			return &s
+		}
+
+	case strings.HasPrefix(line, "video:"):
+		if v, ok := values.Get(line[len("video:"):]); ok {
+			s.Type = model.AttachVideo
+			s.Payload.Token = v.(string)
+
+			return &s
+		}
+
+	case strings.HasPrefix(line, "audio:"):
+		if v, ok := values.Get(line[len("audio:"):]); ok {
+			s.Type = model.AttachAudio
+			s.Payload.Token = v.(string)
+
+			return &s
+		}
+
+	case strings.HasPrefix(line, "file:"):
+		if v, ok := values.Get(line[len("file:"):]); ok {
+			s.Type = model.AttachFile
+			s.Payload.Token = v.(string)
+
+			return &s
+		}
+	case strings.HasPrefix(line, "sticker:"):
+		if v, ok := values.Get(line[len("sticker:"):]); ok {
+			s.Type = model.AttachSticker
+			s.Payload.Token = v.(string)
+
+			return &s
+		}
+	}
+
+	return nil
+}
