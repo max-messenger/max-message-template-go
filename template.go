@@ -175,9 +175,9 @@ func ParseFormV2(template string, values Getter) (string, []model.Attachment) {
 
 func ParseTemplate(template string, values Getter) (string, []model.Attachment) {
 	if strings.Index(template, "===") == -1 {
-		s, kbd := ParseForm(template, values)
+		s, kbd := ParseFormV2(template, values)
 		if kbd != nil {
-			return s, []model.Attachment{kbd.Build()}
+			return s, kbd
 		}
 
 		return s, []model.Attachment{}
